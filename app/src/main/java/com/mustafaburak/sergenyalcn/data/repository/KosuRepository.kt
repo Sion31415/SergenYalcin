@@ -12,7 +12,10 @@ class KosuRepository(private val kosuDao: KosuDao) {
 
     suspend fun getById(id: Int): Kosu? = kosuDao.getById(id)
 
-    suspend fun insert(kosu: Kosu) = kosuDao.insert(kosu)
+    // KosuRepository.kt içindeki hali şuna benzemeli:
+    suspend fun insert(kosu: Kosu): Long {
+        return kosuDao.insert(kosu)
+    }
 
     suspend fun insertAll(kosular: List<Kosu>) = kosuDao.insertAll(kosular)
 

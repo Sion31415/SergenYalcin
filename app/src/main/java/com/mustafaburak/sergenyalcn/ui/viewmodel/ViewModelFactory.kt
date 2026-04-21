@@ -14,16 +14,22 @@ class ViewModelFactory(
     private val context: Context
 ) : ViewModelProvider.Factory {
 
+    @Suppress("UNCHECKED_CAST")
     override fun <T : ViewModel> create(modelClass: Class<T>): T {
         return when {
             modelClass.isAssignableFrom(AtViewModel::class.java) ->
                 AtViewModel(atRepository) as T
+
             modelClass.isAssignableFrom(KosuViewModel::class.java) ->
-                KosuViewModel(kosuRepository) as T
+                // YENİ EKLENDİ: kosuSonucuRepository artık KosuViewModel'e gönderiliyor
+                KosuViewModel(kosuRepository, kosuSonucuRepository) as T
+
             modelClass.isAssignableFrom(KosuSonucuViewModel::class.java) ->
                 KosuSonucuViewModel(kosuSonucuRepository) as T
+
             modelClass.isAssignableFrom(TahminViewModel::class.java) ->
                 TahminViewModel(kosuRepository, kosuSonucuRepository, context) as T
+
             else -> throw IllegalArgumentException("Bilinmeyen ViewModel: ${modelClass.name}")
         }
     }

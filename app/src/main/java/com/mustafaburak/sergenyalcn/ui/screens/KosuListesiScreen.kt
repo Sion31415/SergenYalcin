@@ -1,5 +1,8 @@
 package com.mustafaburak.sergenyalcn.ui.screens
 
+import android.net.Uri
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -11,6 +14,7 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -28,6 +32,18 @@ fun KosuListesiScreen(navController: NavController, factory: ViewModelFactory) {
     val kosular by viewModel.kosular.collectAsState()
 
     var kosuEkleDialog by remember { mutableStateOf(false) }
+    val context = LocalContext.current
+
+    // YENİ: PDF Seçici
+    // PDF Seçici Tanımlaması
+    val pdfSecici = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.GetContent()
+    ) { uri: Uri? ->
+        if (uri != null) {
+            // BAĞLANTIYI KURDUK: ViewModel'deki fonksiyonu çağırıyoruz
+            viewModel.pdfOku(uri, context)
+        }
+    }
 
     Scaffold(
         topBar = {
@@ -36,6 +52,12 @@ fun KosuListesiScreen(navController: NavController, factory: ViewModelFactory) {
                 navigationIcon = {
                     IconButton(onClick = { navController.popBackStack() }) {
                         Icon(Icons.Default.ArrowBack, contentDescription = "Geri")
+                    }
+                },
+                // YENİ: PDF Butonu
+                actions = {
+                    TextButton(onClick = { pdfSecici.launch("application/pdf") }) {
+                        Text("PDF Aktar", color = MaterialTheme.colorScheme.onPrimary, fontWeight = FontWeight.Bold)
                     }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(
@@ -71,7 +93,7 @@ fun KosuListesiScreen(navController: NavController, factory: ViewModelFactory) {
                     contentAlignment = Alignment.Center
                 ) {
                     Text(
-                        text = "Henüz koşu eklenmemiş.\nSağ alttaki + butonuna bas.",
+                        text = "Henüz koşu eklenmemiş.\nSağ alttaki + butonuna bas veya üstten PDF Aktar.",
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                 }
@@ -180,7 +202,6 @@ fun KosuEkleDialog(onDismiss: () -> Unit, onKaydet: (Kosu) -> Unit) {
                     modifier = Modifier.fillMaxWidth(),
                     singleLine = true
                 )
-                // Hipodrom seçimi
                 Text("Hipodrom:", fontSize = 14.sp)
                 Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
                     listOf("istanbul", "ankara", "izmir", "bursa").forEach { h ->
@@ -191,7 +212,6 @@ fun KosuEkleDialog(onDismiss: () -> Unit, onKaydet: (Kosu) -> Unit) {
                         )
                     }
                 }
-                // Pist durumu
                 Text("Pist Durumu:", fontSize = 14.sp)
                 Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
                     listOf("kuru", "iyi", "ağır", "çok ağır").forEach { p ->
@@ -202,7 +222,6 @@ fun KosuEkleDialog(onDismiss: () -> Unit, onKaydet: (Kosu) -> Unit) {
                         )
                     }
                 }
-                // Hava durumu
                 Text("Hava:", fontSize = 14.sp)
                 Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
                     listOf("açık", "bulutlu", "yağmurlu").forEach { h ->

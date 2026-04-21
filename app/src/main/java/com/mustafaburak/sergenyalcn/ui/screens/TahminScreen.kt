@@ -1,10 +1,14 @@
 package com.mustafaburak.sergenyalcn.ui.screens
 
+import android.net.Uri
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material.icons.filled.Description
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -14,7 +18,6 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
-import com.mustafaburak.sergenyalcn.ml.AtGirisi
 import com.mustafaburak.sergenyalcn.ml.AtSkoru
 import com.mustafaburak.sergenyalcn.ui.viewmodel.TahminViewModel
 import com.mustafaburak.sergenyalcn.ui.viewmodel.ViewModelFactory
@@ -26,18 +29,19 @@ fun TahminScreen(navController: NavController, factory: ViewModelFactory) {
     val tahminSonuclari by viewModel.tahminSonuclari.collectAsState()
     val yukleniyor by viewModel.yukleniyor.collectAsState()
 
-    var secilenKupon by remember { mutableStateOf("Ganyan") }
-    var pistDurumu by remember { mutableStateOf("kuru") }
-    var mesafe by remember { mutableStateOf("1200") }
-    var atlarMetin by remember { mutableStateOf("") }
-    var tahminYapildi by remember { mutableStateOf(false) }
-
-    val kuponlar = listOf("Ganyan", "Plase", "İkili", "Sıralı İkili", "Üçlü", "Dörtlü", "Altılı", "Tabela")
+    // PDF Seçici
+    val pdfSecici = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.GetContent()
+    ) { uri: Uri? ->
+        if (uri != null) {
+            viewModel.programdanTahminEt(uri)
+        }
+    }
 
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("🎯 Tahmin") },
+                title = { Text("🎯 Tahmin Sıralaması") },
                 navigationIcon = {
                     IconButton(onClick = { navController.popBackStack() }) {
                         Icon(Icons.Default.ArrowBack, contentDescription = "Geri")
@@ -58,143 +62,48 @@ fun TahminScreen(navController: NavController, factory: ViewModelFactory) {
                 .padding(16.dp),
             verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
-            // Kupon seçimi
             item {
-                Text("Kupon Türü", fontWeight = FontWeight.Bold, fontSize = 16.sp)
-                Spacer(modifier = Modifier.height(8.dp))
-                Row(
+                Card(
                     modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(6.dp)
+                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)
                 ) {
-                    kuponlar.take(4).forEach { kupon ->
-                        FilterChip(
-                            selected = secilenKupon == kupon,
-                            onClick = { secilenKupon = kupon },
-                            label = { Text(kupon, fontSize = 12.sp) }
-                        )
-                    }
-                }
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(6.dp)
-                ) {
-                    kuponlar.drop(4).forEach { kupon ->
-                        FilterChip(
-                            selected = secilenKupon == kupon,
-                            onClick = { secilenKupon = kupon },
-                            label = { Text(kupon, fontSize = 12.sp) }
-                        )
-                    }
-                }
-            }
-
-            // Pist durumu
-            item {
-                Text("Pist Durumu", fontWeight = FontWeight.Bold, fontSize = 16.sp)
-                Spacer(modifier = Modifier.height(8.dp))
-                Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                    listOf("kuru", "iyi", "ağır", "çok ağır").forEach { p ->
-                        FilterChip(
-                            selected = pistDurumu == p,
-                            onClick = { pistDurumu = p },
-                            label = { Text(p) }
-                        )
-                    }
-                }
-            }
-
-            // Mesafe
-            item {
-                Text("Mesafe", fontWeight = FontWeight.Bold, fontSize = 16.sp)
-                Spacer(modifier = Modifier.height(8.dp))
-                OutlinedTextField(
-                    value = mesafe,
-                    onValueChange = { mesafe = it },
-                    label = { Text("Mesafe (metre)") },
-                    modifier = Modifier.fillMaxWidth(),
-                    singleLine = true
-                )
-            }
-
-            // At girişi
-            item {
-                Text("Atlar", fontWeight = FontWeight.Bold, fontSize = 16.sp)
-                Text(
-                    text = "Her satıra bir at: StartNo,AtId,Jokey,Antrenor,Siklet",
-                    fontSize = 12.sp,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
-                Spacer(modifier = Modifier.height(8.dp))
-                OutlinedTextField(
-                    value = atlarMetin,
-                    onValueChange = { atlarMetin = it },
-                    label = { Text("Örnek: 1,23,H.CİZİK,YUS.KAYA,57") },
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(180.dp),
-                    maxLines = 10
-                )
-            }
-
-            // Tahmin butonu
-            item {
-                Button(
-                    onClick = {
-                        val atlar = atlarMetinParse(atlarMetin)
-                        if (atlar.isNotEmpty()) {
-                            viewModel.tahminYap(
-                                atlar = atlar,
-                                pistDurumu = pistDurumu,
-                                mesafe = mesafe.toIntOrNull() ?: 1200,
-                                kosuId = 0
-                            )
-                            tahminYapildi = true
+                    Column(
+                        modifier = Modifier.padding(16.dp),
+                        horizontalAlignment = Alignment.CenterHorizontally
+                    ) {
+                        Text("Yarış Programı Analizi", fontWeight = FontWeight.Bold)
+                        Spacer(modifier = Modifier.height(8.dp))
+                        Button(
+                            onClick = { pdfSecici.launch("application/pdf") },
+                            enabled = !yukleniyor,
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            Icon(Icons.Default.Description, contentDescription = null)
+                            Spacer(modifier = Modifier.width(8.dp))
+                            Text(if (yukleniyor) "ANALİZ EDİLİYOR..." else "PROGRAM PDF YÜKLE")
                         }
-                    },
-                    modifier = Modifier.fillMaxWidth(),
-                    enabled = !yukleniyor
-                ) {
-                    if (yukleniyor) {
-                        CircularProgressIndicator(
-                            modifier = Modifier.size(20.dp),
-                            color = MaterialTheme.colorScheme.onPrimary
-                        )
-                    } else {
-                        Text("TAHMİN YAP", fontWeight = FontWeight.Bold)
                     }
                 }
             }
 
-            // Sonuçlar
-            if (tahminYapildi && tahminSonuclari.isNotEmpty()) {
+            if (tahminSonuclari.isNotEmpty()) {
                 item {
-                    Divider()
-                    Spacer(modifier = Modifier.height(8.dp))
                     Text(
-                        text = "📊 $secilenKupon Tahmini",
+                        text = "Kazanma İhtimaline Göre Sıralama",
                         fontWeight = FontWeight.Bold,
-                        fontSize = 18.sp
+                        color = MaterialTheme.colorScheme.primary,
+                        modifier = Modifier.padding(top = 8.dp, bottom = 4.dp)
                     )
-                    Spacer(modifier = Modifier.height(8.dp))
                 }
 
-                // Kupon türüne göre sonuçları filtrele
-                val gosterilecekSonuclar = when (secilenKupon) {
-                    "Ganyan" -> tahminSonuclari.take(1)
-                    "Plase" -> tahminSonuclari.take(3)
-                    "Tabela" -> tahminSonuclari.take(4)
-                    "Sıralı İkili" -> tahminSonuclari.take(2)
-                    else -> tahminSonuclari.take(3)
-                }
-
-                items(gosterilecekSonuclar) { skor ->
+                // Atları direkt listele (Kupon falan yok)
+                items(tahminSonuclari) { skor ->
                     TahminSonucKarti(skor = skor, sira = tahminSonuclari.indexOf(skor) + 1)
                 }
-
-                // Altılı için özel gösterim
-                if (secilenKupon == "Altılı") {
-                    item {
-                        AltiliKart(tahminSonuclari = tahminSonuclari)
+            } else if (!yukleniyor) {
+                item {
+                    Box(modifier = Modifier.fillMaxWidth().height(150.dp), contentAlignment = Alignment.Center) {
+                        Text("Tahminleri görmek için PDF yükleyin.", color = MaterialTheme.colorScheme.onSurfaceVariant)
                     }
                 }
             }
@@ -206,127 +115,30 @@ fun TahminScreen(navController: NavController, factory: ViewModelFactory) {
 fun TahminSonucKarti(skor: AtSkoru, sira: Int) {
     Card(
         modifier = Modifier.fillMaxWidth(),
-        elevation = CardDefaults.cardElevation(defaultElevation = 3.dp),
+        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
         colors = CardDefaults.cardColors(
             containerColor = when (sira) {
-                1 -> MaterialTheme.colorScheme.primaryContainer
-                2 -> MaterialTheme.colorScheme.secondaryContainer
-                3 -> MaterialTheme.colorScheme.tertiaryContainer
-                else -> MaterialTheme.colorScheme.surfaceVariant
+                1 -> MaterialTheme.colorScheme.primaryContainer // 1. At Renkli
+                else -> MaterialTheme.colorScheme.surface
             }
         )
     ) {
-        Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(16.dp)
+        Row(
+            modifier = Modifier.padding(16.dp),
+            verticalAlignment = Alignment.CenterVertically
         ) {
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Text(
-                    text = "$sira.",
-                    fontSize = 24.sp,
-                    fontWeight = FontWeight.Bold,
-                    modifier = Modifier.width(40.dp)
-                )
-                Column(modifier = Modifier.weight(1f)) {
-                    Text(
-                        text = "Start: ${skor.startNo} — ${skor.jokey}",
-                        fontWeight = FontWeight.Bold,
-                        fontSize = 15.sp
-                    )
-                    Text(
-                        text = "Antrenör: ${skor.antrenor}",
-                        fontSize = 13.sp
-                    )
-                }
-                Text(
-                    text = "%${"%.1f".format(skor.kazanmaTahmini)}",
-                    fontWeight = FontWeight.Bold,
-                    fontSize = 18.sp,
-                    color = MaterialTheme.colorScheme.primary
-                )
+            Text("$sira.", fontSize = 24.sp, fontWeight = FontWeight.Bold, modifier = Modifier.width(36.dp))
+            Column(modifier = Modifier.weight(1f)) {
+                Text(skor.atIsmi, fontWeight = FontWeight.Bold, fontSize = 16.sp)
+                Text("Start: ${skor.startNo} | Jokey: ${skor.jokey}", fontSize = 12.sp)
             }
-
-            Spacer(modifier = Modifier.height(8.dp))
-
-            // Skor detayları
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween
-            ) {
-                SkorDetay("Derece", skor.gecmisDereceSkoru)
-                SkorDetay("Jokey", skor.jokeySkoru)
-                SkorDetay("Antrenör", skor.antrenorSkoru)
-                SkorDetay("Sıklet", skor.sikletSkoru)
-                SkorDetay("Pist", skor.pistUyumSkoru)
-                SkorDetay("Mesafe", skor.mesafeUyumSkoru)
-            }
-        }
-    }
-}
-
-@Composable
-fun SkorDetay(baslik: String, skor: Float) {
-    Column(horizontalAlignment = Alignment.CenterHorizontally) {
-        Text(text = baslik, fontSize = 10.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
-        Text(
-            text = "%.2f".format(skor),
-            fontSize = 12.sp,
-            fontWeight = FontWeight.Bold
-        )
-    }
-}
-
-@Composable
-fun AltiliKart(tahminSonuclari: List<AtSkoru>) {
-    Card(
-        modifier = Modifier.fillMaxWidth(),
-        elevation = CardDefaults.cardElevation(defaultElevation = 3.dp),
-        colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.primaryContainer
-        )
-    ) {
-        Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(16.dp)
-        ) {
+            // Sadece Yüzde Şans Gösterimi
             Text(
-                text = "🎰 Altılı Kombinasyon",
+                "%${"%.1f".format(skor.kazanmaTahmini)}",
                 fontWeight = FontWeight.Bold,
-                fontSize = 16.sp
-            )
-            Spacer(modifier = Modifier.height(8.dp))
-            Text(
-                text = "Ana seçim: ${tahminSonuclari.take(1).joinToString { "Start ${it.startNo}" }}",
-                fontSize = 14.sp
-            )
-            Text(
-                text = "Alternatif: ${tahminSonuclari.drop(1).take(1).joinToString { "Start ${it.startNo}" }}",
-                fontSize = 14.sp
+                fontSize = 22.sp,
+                color = MaterialTheme.colorScheme.primary
             )
         }
     }
-}
-
-// At metni parse et
-fun atlarMetinParse(metin: String): List<AtGirisi> {
-    return metin.lines()
-        .filter { it.isNotBlank() }
-        .mapNotNull { satir ->
-            val parcalar = satir.split(",").map { it.trim() }
-            if (parcalar.size >= 5) {
-                AtGirisi(
-                    atId = parcalar[1].toIntOrNull() ?: 0,
-                    atIsmi = "At ${parcalar[0]}",
-                    startNo = parcalar[0].toIntOrNull() ?: 0,
-                    jokey = parcalar[2],
-                    antrenor = parcalar[3],
-                    siklet = parcalar[4].toFloatOrNull() ?: 0f
-                )
-            } else null
-        }
 }

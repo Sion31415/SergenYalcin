@@ -6,19 +6,26 @@ import kotlinx.coroutines.flow.Flow
 
 class KosuSonucuRepository(private val kosuSonucuDao: KosuSonucuDao) {
 
-    fun getByKosuId(kosuId: Int): Flow<List<KosuSonucu>> =
-        kosuSonucuDao.getByKosuId(kosuId)
+    fun getAll(): Flow<List<KosuSonucu>> = kosuSonucuDao.getAll()
 
-    fun getByAtId(atId: Int): Flow<List<KosuSonucu>> =
-        kosuSonucuDao.getByAtId(atId)
+    fun getByKosuId(kosuId: Int): Flow<List<KosuSonucu>> = kosuSonucuDao.getByKosuId(kosuId)
 
-    fun getByJokey(jokey: String): Flow<List<KosuSonucu>> =
-        kosuSonucuDao.getByJokey(jokey)
+    // YENİ EKLENEN KISIM
+    fun getByAtId(atId: Int): Flow<List<KosuSonucu>> = kosuSonucuDao.getByAtId(atId)
 
-    suspend fun insert(sonuc: KosuSonucu) = kosuSonucuDao.insert(sonuc)
+    // YENİ EKLENEN KISIM
+    fun getByJokey(jokey: String): Flow<List<KosuSonucu>> = kosuSonucuDao.getByJokey(jokey)
 
-    suspend fun insertAll(sonuclar: List<KosuSonucu>) =
+    suspend fun insert(sonuc: KosuSonucu) {
+        kosuSonucuDao.insert(sonuc)
+    }
+
+    // YENİ EKLENEN KISIM
+    suspend fun insertAll(sonuclar: List<KosuSonucu>) {
         kosuSonucuDao.insertAll(sonuclar)
+    }
 
-    suspend fun delete(sonuc: KosuSonucu) = kosuSonucuDao.delete(sonuc)
+    suspend fun delete(sonuc: KosuSonucu) {
+        kosuSonucuDao.delete(sonuc)
+    }
 }

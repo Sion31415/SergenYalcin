@@ -9,16 +9,19 @@ data class KosuSonucu(
     val id: Int = 0,
     val kosuId: Int,
     val atId: Int,
+    val atIsmi: String,       // İŞTE BİZİM EKSİK OLAN VE HATAYI ÇÖZECEK SATIR BURASI!
     val jokey: String,
     val antrenor: String,
     val sahip: String,
     val siklet: Float,
-    val derece: String,       // 0.52.29
-    val gny: Float,           // ganyan oranı
+    val derece: String,       // Örn: 1.38.32
+    val gny: Float,           // Ganyan oranı
     val agf: Float,
     val startNo: Int,
-    val fark: String,         // 2 Boy, Boyun vs
-    val gikis: Int,           // giriş sırası
-    val hp: Int,              // handikap puanı
-    val sonuc: Int            // 1. 2. 3. vs
+    val fark: String,         // Örn: 2 Boy
+    val gikis: Int,           // Giriş sırası (G. Çık)
+    val hp: Int,              // Handikap puanı
+    val sonuc: Int,           // Kaçıncı olduğu (S)
+    val yas: String,          // Örn: 3y d e
+    val orijin: String        // Örn: KLIMT (USA) - SHANTI (GER)
 )

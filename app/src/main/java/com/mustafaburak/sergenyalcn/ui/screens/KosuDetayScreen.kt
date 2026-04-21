@@ -131,13 +131,20 @@ fun SonucKarti(sonuc: KosuSonucu, onSil: () -> Unit) {
                 modifier = Modifier.width(48.dp)
             )
             Column(modifier = Modifier.weight(1f)) {
+                // ✅ atIsmi artık gösteriliyor
                 Text(
-                    text = "Start: ${sonuc.startNo}",
+                    text = sonuc.atIsmi.ifEmpty { "Start: ${sonuc.startNo}" },
                     fontWeight = FontWeight.Bold,
                     fontSize = 16.sp
                 )
-                Text(text = "Jokey: ${sonuc.jokey}", fontSize = 13.sp)
-                Text(text = "Antrenör: ${sonuc.antrenor}", fontSize = 13.sp)
+                Text(text = "Start: ${sonuc.startNo} | Jokey: ${sonuc.jokey} | Ant: ${sonuc.antrenor}", fontSize = 13.sp)
+                if (sonuc.yas.isNotEmpty() || sonuc.orijin.isNotEmpty()) {
+                    Text(
+                        text = "${sonuc.yas} | ${sonuc.orijin}",
+                        fontSize = 12.sp,
+                        color = MaterialTheme.colorScheme.primary
+                    )
+                }
                 Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                     Text(
                         text = "Derece: ${sonuc.derece}",
@@ -180,6 +187,8 @@ fun SonucEkleDialog(
     onDismiss: () -> Unit,
     onKaydet: (KosuSonucu) -> Unit
 ) {
+    // ✅ atIsmi state değişkeni eklendi
+    var atIsmiGiris by remember { mutableStateOf("") }
     var startNoGiris by remember { mutableStateOf("") }
     var jokeyGiris by remember { mutableStateOf("") }
     var antrenorGiris by remember { mutableStateOf("") }
@@ -192,12 +201,26 @@ fun SonucEkleDialog(
     var gikisGiris by remember { mutableStateOf("") }
     var hpGiris by remember { mutableStateOf("") }
     var sonucGiris by remember { mutableStateOf("") }
+    var yasGiris by remember { mutableStateOf("") }
+    var orijinGiris by remember { mutableStateOf("") }
 
     AlertDialog(
         onDismissRequest = onDismiss,
         title = { Text("Sonuç Ekle") },
         text = {
             LazyColumn(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+
+                // ✅ EN ÜSTE EKLENDİ — ML motorunun çalışması için kritik
+                item {
+                    OutlinedTextField(
+                        value = atIsmiGiris,
+                        onValueChange = { atIsmiGiris = it.uppercase() },
+                        label = { Text("At İsmi *") },
+                        modifier = Modifier.fillMaxWidth(),
+                        singleLine = true,
+                        supportingText = { Text("ML motoru bu isimle eşleştirir") }
+                    )
+                }
                 item {
                     OutlinedTextField(
                         value = startNoGiris,
@@ -230,6 +253,24 @@ fun SonucEkleDialog(
                         value = antrenorGiris,
                         onValueChange = { antrenorGiris = it },
                         label = { Text("Antrenör *") },
+                        modifier = Modifier.fillMaxWidth(),
+                        singleLine = true
+                    )
+                }
+                item {
+                    OutlinedTextField(
+                        value = yasGiris,
+                        onValueChange = { yasGiris = it },
+                        label = { Text("Yaş (Örn: 3y d e)") },
+                        modifier = Modifier.fillMaxWidth(),
+                        singleLine = true
+                    )
+                }
+                item {
+                    OutlinedTextField(
+                        value = orijinGiris,
+                        onValueChange = { orijinGiris = it },
+                        label = { Text("Orijin (Örn: KLIMT - SHANTI)") },
                         modifier = Modifier.fillMaxWidth(),
                         singleLine = true
                     )
@@ -310,14 +351,17 @@ fun SonucEkleDialog(
         },
         confirmButton = {
             Button(
+                // ✅ atIsmiGiris zorunlu alana eklendi
                 onClick = {
-                    if (startNoGiris.isNotEmpty() && jokeyGiris.isNotEmpty() &&
-                        sikletGiris.isNotEmpty() && sonucGiris.isNotEmpty()
+                    if (atIsmiGiris.isNotEmpty() && startNoGiris.isNotEmpty() &&
+                        jokeyGiris.isNotEmpty() && sikletGiris.isNotEmpty() &&
+                        sonucGiris.isNotEmpty()
                     ) {
                         onKaydet(
                             KosuSonucu(
                                 kosuId = kosuId,
                                 atId = 0,
+                                atIsmi = atIsmiGiris,                          // ✅ Artık dolu geliyor
                                 startNo = startNoGiris.toIntOrNull() ?: 0,
                                 jokey = jokeyGiris,
                                 antrenor = antrenorGiris,
@@ -329,7 +373,9 @@ fun SonucEkleDialog(
                                 fark = farkGiris,
                                 gikis = gikisGiris.toIntOrNull() ?: 0,
                                 hp = hpGiris.toIntOrNull() ?: 0,
-                                sonuc = sonucGiris.toIntOrNull() ?: 0
+                                sonuc = sonucGiris.toIntOrNull() ?: 0,
+                                yas = yasGiris,
+                                orijin = orijinGiris
                             )
                         )
                     }
